@@ -16,24 +16,26 @@ pl[3] = next node
 #define FALSE 0
 typedef int BOOL;
 
+// dando problema pra armazenar 10 contatos -- muito provavelmente pro causa da lógica usada nos ponteiros
 void* RESET();  // funcionando
 void PUSH( void * pBuffer, void ** pL, int * size, int * i ); // tem q implementar a ordem alfabetica
-void* POP(); // precisa implementar
+void* POP( void * pBuffer, void **pL, int * size, int * i); // precisa retirar do meio e do começo não sendo contato unico
 void PRINT( void ** pL, int * size, int * i ); // funcionando
 BOOL EMPTY( void * head ); // funcionando
 void MENU( int * option ); // funcionando
-void CLEAR( void * pBuffer, void ** pL, int * i, int * size ); // funcionando
+void CLEAR( void * pBuffer, void ** pL ); // funcionando
 void FIND( void ** pL, int * size, int * i ); // funcionando
 
 int main() {
     void * pBuffer = RESET();
+
     int * size;
     int * option;
     int * i;
 
     void ** pL;
     
-    pL = malloc( sizeof( void * ) * 2 );
+    pL = ( void ** ) malloc( sizeof( void * ) * 2 );
     pL[0] = NULL;
     pL[1] = NULL;
 
@@ -56,19 +58,35 @@ int main() {
             PUSH( (pBuffer + START_SIZE ), pL, size, i );
             break;
         case 2:
-            
+            (*size)--;
+            pBuffer = POP( pBuffer, pL, size, i );
+            size = ( int * )pBuffer;
+            option = ( int * )( pBuffer + sizeof( int ) );
+            i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
+            if ( (*i) == 0 && (*size) == 0 ) {
+                pL = (void ** ) malloc( sizeof( void * ) * 2 );
+                pL[0] = NULL;
+                pL[1] = NULL;
+            }
             break;
         case 3:
-            PRINT( pL, size, i );  
+            if ( (*size) == 0 )
+                printf("Lista vazia\n");
+            else
+                PRINT( pL, size, i );  
             break;
         case 4:
             FIND( pL, size, i );
             break;
         case 5:
-            CLEAR( pBuffer, pL, i, size );
+            CLEAR( pBuffer, pL );
             exit(1);
             break;
         }
+        if ( (*size) == 0 )
+            *i = 0;
+        else
+            *i = ( (*size) * 2 ) - 1;
     }
 
     return 0;
@@ -79,7 +97,7 @@ void *RESET() {
 
     *( int * )pointer = 0;                                  // size
     *( int * )( pointer + sizeof( int ) ) = 0;              // option
-    *( int * )( pointer + ( sizeof( int ) * 2  ) ) = 1;     // i
+    *( int * )( pointer + ( sizeof( int ) * 2  ) ) = 0;     // i
 
     return pointer;
 }
@@ -87,8 +105,6 @@ void *RESET() {
 void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
     void * pointer = pBuffer;
     void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) );
-    //void * hold = ( void * )malloc( sizeof( void *) );
-    //char * name = ( char * )malloc( NAME_SIZE );
 
     getchar();
     if ( EMPTY( pL[0] ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
@@ -119,22 +135,44 @@ void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
     pointer = pointer + sizeof( int );
     scanf("%d", ( int * )pointer );
 
-/*
-    *i = 0;
-    pL = ( void ** )realloc( pL, sizeof( pL ) + sizeof( void * ) * 2 );
-    
-    pointer = pL[*i];
-    while( !(strcmp( (char *)pointer, name ) < 1) ) {
-        *i += 2;
-        pointer = pL[*i];
-    }
+}
 
-    hold = pL[*i - 1];
-    pL[*i - 1] = pointer;
-    pL[ *i ] = pL[ *i - 4 ];
-    pL[ *i + 1 ] = hold;
-    pL[ *i + 2 ] = pointer;
-*/
+void* POP(void * pBuffer, void ** pL, int * size, int * i) {
+    void * newBuffer = ( void * )realloc( pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
+    void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) );
+    void * p1;
+    void * p2;
+    char * name = ( char * )malloc( NAME_SIZE );
+
+    getchar();
+    printf("Informe o nome a ser encontrado: ");
+    scanf("%9[^\n]s", name);
+
+    *i = 0;
+    if ( !strcmp( (char *)pL[ 0 ], name  ) ) 
+        ;
+    else 
+        while ( strcmp((char *)pL[(*i) + 1], name) && ( *i < ( ( (* size) * 2 ) - 2 ) ) )
+            *i += 2;
+
+    // CASO O ULTIMO SEJA O PRIMEIRO TB -- UM UNICO CONTATO NA AGENDA
+    if ( (*i) == 0 && (*size) == 0 ) {
+        CLEAR( pBuffer, pL  );
+        newBuffer = RESET();
+        return newBuffer;
+    }
+    
+    if ( *i < ( ( (* size) * 2 ) - 2 ) ) { 
+        
+        // CASO SEJA O ULTIMO A SER REMOVIDO
+        for ( (*i) = 0 ; *i < ((*size) - 1) * 2 ; (*i)++ ) 
+            newPL[*i] = pL[*i];
+        newPL[*i] = NULL;
+        pL = newPL;
+        return newBuffer;
+    }
+    
+    return newBuffer;
 }
 
 void PRINT( void ** pL, int * size, int * i ) {
@@ -181,14 +219,9 @@ void MENU(int *option)
     }
 }
 
-void CLEAR( void * pBuffer, void ** pL, int * i, int * size ) {
-
-    for ( *i = 0 ; *i < (*size) * 2 ; i++ ) {
-        free(pL[ (* i) ]);
-    }
-    free( pL );
+void CLEAR( void * pBuffer, void ** pL ) {
     free( pBuffer );
-
+    free( pL );
 }
 
 void FIND(void ** pL, int * size, int * i ) {
