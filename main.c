@@ -18,13 +18,13 @@ typedef int BOOL;
 
 // dando problema pra armazenar 10 contatos -- muito provavelmente pro causa da lógica usada nos ponteiros
 void* RESET();  // funcionando
-void PUSH( void * pBuffer, void ** pL, int * size, int * i ); // tem q implementar a ordem alfabetica
-void* POP( void * pBuffer, void **pL, int * size, int * i); // precisa retirar do meio e do começo não sendo contato unico
-void PRINT( void ** pL, int * size, int * i ); // funcionando
+void PUSH( void * pBuffer, void ** Last, void ** Next , int * size, int * i ); // tem q implementar a ordem alfabetica
+void* POP( void * pBuffer, void ** Last, void ** Next, int * size, int * i); // precisa retirar do meio e do começo não sendo contato unico
+void PRINT( void ** Last, void ** Next, int * size, int * i ); // funcionando
 BOOL EMPTY( void * head ); // funcionando
 void MENU( int * option ); // funcionando
-void CLEAR( void * pBuffer, void ** pL ); // funcionando
-void FIND( void ** pL, int * size, int * i ); // funcionando
+void CLEAR( void * pBuffer, void ** Last, void ** Next ); // funcionando
+void FIND( void ** Last, void ** Next, int * size, int * i ); // funcionando
 
 int main() {
     void * pBuffer = RESET();
@@ -33,11 +33,11 @@ int main() {
     int * option;
     int * i;
 
-    void ** pL;
-    
-    pL = ( void ** ) malloc( sizeof( void * ) * 2 );
-    pL[0] = NULL;
-    pL[1] = NULL;
+    void ** pLast = ( void ** )malloc( sizeof( void * ) );
+    void ** pNext = ( void ** )malloc( sizeof( void * ) );
+
+    pLast[0] = NULL;
+    pNext[0] = NULL;
 
     size = ( int * )pBuffer;
     option = ( int * )( pBuffer + sizeof( int ) );
@@ -48,45 +48,46 @@ int main() {
         switch ( *option ) {
         case 1:
             (*size)++;
-            if ( EMPTY( pL[0] ) )
+            if ( EMPTY( pLast[0] ) )
                 pBuffer = ( void * )realloc( pBuffer, START_SIZE + REGISTER_SIZE );
             else
                 pBuffer = ( void * )realloc( pBuffer, ( START_SIZE + REGISTER_SIZE ) * ( *size) );
             size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
             i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
-            PUSH( (pBuffer + START_SIZE ), pL, size, i );
+            PUSH( (pBuffer + START_SIZE ), pLast, pNext, size, i );
             break;
         case 2:
             (*size)--;
-            pBuffer = POP( pBuffer, pL, size, i );
+            pBuffer = POP( pBuffer, pLast, pNext, size, i );
             size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
             i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
             if ( (*i) == 0 && (*size) == 0 ) {
-                pL = (void ** ) malloc( sizeof( void * ) * 2 );
-                pL[0] = NULL;
-                pL[1] = NULL;
+                pLast = ( void ** )malloc( sizeof( void * ) );
+                pNext = ( void ** )malloc( sizeof( void * ) );
+                pLast[0] = NULL;
+                pNext[0] = NULL;
             }
             break;
         case 3:
             if ( (*size) == 0 )
                 printf("Lista vazia\n");
             else
-                PRINT( pL, size, i );  
+                PRINT( pLast, pNext, size, i );  
             break;
         case 4:
-            FIND( pL, size, i );
+            FIND( pLast, pNext, size, i );
             break;
         case 5:
-            CLEAR( pBuffer, pL );
+            CLEAR( pBuffer, pLast, pNext );
             exit(1);
             break;
         }
         if ( (*size) == 0 )
             *i = 0;
         else
-            *i = ( (*size) * 2 ) - 1;
+            *i = (*size) - 1;
     }
 
     return 0;
@@ -102,32 +103,34 @@ void *RESET() {
     return pointer;
 }
 
-void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
+void PUSH( void * pBuffer, void ** Last, void ** Next, int * size, int * i ) {
     void * pointer = pBuffer;
-    void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) );
+    void ** newLast = realloc( Last, sizeof( void * ) * (*size) );
+    void ** newNext = realloc( Last, sizeof( void * ) * (*size) );
 
     getchar();
-    if ( EMPTY( pL[0] ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
+    if ( EMPTY( Last[0] ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
         scanf("%9[^\n]s", ( char * )pointer );
         pointer = pointer + NAME_SIZE;
         scanf("%d", ( int * )pointer );
         pointer = pointer + sizeof( int );
         scanf("%d", ( int * )pointer );
-        pL[0] = pBuffer;
+        Last[0] = pBuffer;
         return;
     }
 
-    for ( (*i) = 0 ; *i < ((*size) - 1) * 2 ; (*i)++ ) 
-        newPL[*i] = pL[*i];
-    pL = newPL;
-    (*i)--;
+    for ( (*i) = 0 ; *i < (*size) - 1 ; (*i)++ ) {
+        newLast[*i] = Last[*i];
+        newNext[*i] = Next[*i];
+    }
+    Last = newLast;
+    Next = newNext;
 
     // LE OS PROXIMOS VALORES DA LISTA E ARRUMA OS PONTEIROS
     pointer = pBuffer + ( REGISTER_SIZE * ( (*size) - 1 ) );
-    pL[ (* i) ] = pointer;          // *i = 1 -- head->next = first
-    pL[ (* i) + 1 ] = pointer - REGISTER_SIZE;  // *i = 2 -- first->last = head
-    (*i) += 2;
-    pL[ (* i) ] = NULL;             // *i = 3 -- first->next = NULL;
+    Next[ (* i) - 1] = pointer;                         //  head->next = first
+    Last[ (* i) ] = pointer - REGISTER_SIZE;            //  first->last = head
+    Next[ (* i) ] = NULL;                               //  first->next = NULL;
 
     scanf("%9[^\n]s", ( char * )pointer );
     pointer = pointer + NAME_SIZE;
@@ -135,13 +138,15 @@ void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
     pointer = pointer + sizeof( int );
     scanf("%d", ( int * )pointer );
 
+
 }
 
-void* POP(void * pBuffer, void ** pL, int * size, int * i) {
+void* POP(void * pBuffer, void ** Last, void ** Next, int * size, int * i) {
     void * newBuffer = ( void * )realloc( pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
-    void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) );
-    void * p1;
-    void * p2;
+    void ** newLast = realloc( Last, sizeof( void * ) * (*size) );
+    void ** newNext = realloc( Last, sizeof( void * ) * (*size) );
+    //void * p1;
+    //void * p2;
     char * name = ( char * )malloc( NAME_SIZE );
 
     getchar();
@@ -149,49 +154,52 @@ void* POP(void * pBuffer, void ** pL, int * size, int * i) {
     scanf("%9[^\n]s", name);
 
     *i = 0;
-    if ( !strcmp( (char *)pL[ 0 ], name  ) ) 
+    if ( !strcmp( (char *)Last[ 0 ], name  ) ) 
         ;
     else 
-        while ( strcmp((char *)pL[(*i) + 1], name) && ( *i < ( ( (* size) * 2 ) - 2 ) ) )
-            *i += 2;
+        while ( strcmp((char *)Next[(*i)], name) && ( *i < ( ( (* size) ) - 1 ) ) )
+            (*i)++;
 
     // CASO O ULTIMO SEJA O PRIMEIRO TB -- UM UNICO CONTATO NA AGENDA
     if ( (*i) == 0 && (*size) == 0 ) {
-        CLEAR( pBuffer, pL  );
+        CLEAR( pBuffer, Last, Next );
         newBuffer = RESET();
         return newBuffer;
     }
     
     if ( *i < ( ( (* size) * 2 ) - 2 ) ) { 
-        
         // CASO SEJA O ULTIMO A SER REMOVIDO
-        for ( (*i) = 0 ; *i < ((*size) - 1) * 2 ; (*i)++ ) 
-            newPL[*i] = pL[*i];
-        newPL[*i] = NULL;
-        pL = newPL;
-        return newBuffer;
+        for ( (*i) = 0 ; *i < (*size) - 1 ; (*i)++ )
+            if ( (*i)%2 == 0 ) 
+                newLast[*i] = Last[*i];
+            else
+                newNext[*i] = Next[*i];
+        newLast[ *i ] = Last[ *i ];
+        newNext[ *i ] = NULL;
+        Last = newLast;
+        Next = newNext;
+        return newBuffer; 
     }
     
     return newBuffer;
 }
 
-void PRINT( void ** pL, int * size, int * i ) {
-    printf(" %s\n", ( char * ) pL[(0)] );
-    printf(" %d\n", *( int * ) ( pL[(0)] + NAME_SIZE ) );
-    printf(" %d\n", *( int * ) ( pL[(0)] + NAME_SIZE + sizeof( int ) ) );
+void PRINT( void ** Last, void ** Next, int * size, int * i ) {
+    printf(" %s\n", ( char * ) Last[(0)] );
+    printf(" %d\n", *( int * ) ( Last[(0)] + NAME_SIZE ) );
+    printf(" %d\n", *( int * ) ( Last[(0)] + NAME_SIZE + sizeof( int ) ) );
 
     if ( (*size) == 1 )
         return;
  
-    for ( (*i) = 1 ; (*i) < (*size) * 2 ; (*i) += 2 ) {
-        if ( (* i) != ((*size) * 2) - 1 ) {
-            printf(" %s\n", ( char * ) pL[(*i)] );
-            printf(" %d\n", *( int * ) ( pL[(*i)] + NAME_SIZE ) );
-            printf(" %d\n", *( int * ) ( pL[(*i)] + NAME_SIZE + sizeof( int ) ) );
+    for ( (*i) = 0 ; (*i) < (*size) ; (*i)++ ) {
+        // NAO PERMITE PRINTAR O ULTIMO->NEXT, QUE ESTA APONTANDO PRA NULL
+        if ( (* i) != (*size) - 1 ) { 
+            printf(" %s\n", ( char * ) Next[(*i)] );
+            printf(" %d\n", *( int * ) ( Next[(*i)] + NAME_SIZE ) );
+            printf(" %d\n", *( int * ) ( Next[(*i)] + NAME_SIZE + sizeof( int ) ) );
         }  
     }
-
-    (*i) = ( (*size) * 2 ) - 1;
 }
 
 BOOL EMPTY(void *head)
@@ -219,32 +227,32 @@ void MENU(int *option)
     }
 }
 
-void CLEAR( void * pBuffer, void ** pL ) {
+void CLEAR( void * pBuffer, void ** Last, void ** Next ) {
     free( pBuffer );
-    free( pL );
+    free( Last );
+    free( Next );
 }
 
-void FIND(void ** pL, int * size, int * i ) {
+void FIND( void ** Last, void ** Next, int * size, int * i ) {
     char * name = ( char * )malloc( NAME_SIZE );
 
     getchar();
     printf("Informe o nome a ser encontrado: ");
     scanf("%9[^\n]s", name);
 
-    if ( !strcmp( (char *)pL[ 0 ], name  ) ) {
-        printf(" %s\n", ( char * ) pL[(0)] );
-        printf(" %d\n", *( int * ) ( pL[(0)] + NAME_SIZE ) );
-        printf(" %d\n", *( int * ) ( pL[(0)] + NAME_SIZE + sizeof( int ) ) );
+    if ( !strcmp( (char *)Last[ 0 ], name  ) ) {
+        printf(" %s\n", ( char * ) Last[(0)] );
+        printf(" %d\n", *( int * ) ( Last[(0)] + NAME_SIZE ) );
+        printf(" %d\n", *( int * ) ( Last[(0)] + NAME_SIZE + sizeof( int ) ) );
 
         return ;
     }
 
-    for ( (*i) = 1 ; (*i) < ( (*size) * 2 ) - 1 ; (*i) += 2 ) {
-        if ( !strcmp( (char *)pL[(* i)], name  ) ) {
-            printf(" %s\n", ( char * ) pL[(*i)] );
-            printf(" %d\n", *( int * ) ( pL[(*i)] + NAME_SIZE ) );
-            printf(" %d\n", *( int * ) ( pL[(*i)] + NAME_SIZE + sizeof( int ) ) );
-            *i = (*size) - 1; 
+    for ( (*i) = 0 ; (*i) < ( *size ) - 1 ; (*i)++ ) {
+        if ( !strcmp( (char *)Next[(* i)], name  ) ) {
+            printf(" %s\n", ( char * ) Next[(*i)] );
+            printf(" %d\n", *( int * ) ( Next[(*i)] + NAME_SIZE ) );
+            printf(" %d\n", *( int * ) ( Next[(*i)] + NAME_SIZE + sizeof( int ) ) );
             return ;
         }
     }
