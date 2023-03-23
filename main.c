@@ -1,4 +1,5 @@
 /*
+Não funcionando apropriadamente
 pl[0] = head
 pl[1] = next node
 pl[2] = last node
@@ -25,6 +26,7 @@ BOOL EMPTY( void * head ); // funcionando
 void MENU( int * option ); // funcionando
 void CLEAR( void * pBuffer, void ** pL ); // funcionando
 void FIND( void ** pL, int * size, int * i ); // funcionando
+void** ORGANIZE( void * pBuffer, void ** pL, int * size, int * i );
 
 int main() {
     void * pBuffer = RESET();
@@ -58,16 +60,13 @@ int main() {
             PUSH( (pBuffer + START_SIZE ), pL, size, i );
             break;
         case 2:
+            if ( (*size) == 0 ) {
+                printf("Lista vazia\n");
+                break;
+            }
             (*size)--;
             pBuffer = POP( pBuffer, pL, size, i );
-            size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
-            i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
-            if ( (*i) == 0 && (*size) == 0 ) {
-                pL = (void ** ) malloc( sizeof( void * ) * 2 );
-                pL[0] = NULL;
-                pL[1] = NULL;
-            }
             break;
         case 3:
             if ( (*size) == 0 )
@@ -76,7 +75,10 @@ int main() {
                 PRINT( pL, size, i );  
             break;
         case 4:
-            FIND( pL, size, i );
+            if ( (*size) == 0 )
+                printf("Lista vazia\n");
+            else
+                FIND( pL, size, i );
             break;
         case 5:
             CLEAR( pBuffer, pL );
@@ -117,10 +119,22 @@ void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
         return;
     }
 
-    for ( (*i) = 0 ; *i < ((*size) - 1) * 2 ; (*i)++ ) 
-        newPL[*i] = pL[*i];
+    // PASSA TODOS OS PONTEIROS PARA O NOVO
+    newPL[0] = pointer;
+    // PRIMEIRO ORGANIZA OS "LAST"
+    for ( (*i) = 2 ; *i <= ((*size) - 1) * 2 ; (*i)+=2 ) {
+        newPL[*i] = pointer;
+        pointer += REGISTER_SIZE;
+    }
+
+    // AGORA ORGANIZA OS "NEXT"
+    pointer = pBuffer + REGISTER_SIZE;
+    for ( (*i) = 1 ; *i <= (((*size) - 1) * 2) ; (*i)+=2 ) {
+        newPL[*i] = pointer;
+        pointer += REGISTER_SIZE;
+    }
+    newPL[*i] = NULL;
     pL = newPL;
-    (*i)--;
 
     // LE OS PROXIMOS VALORES DA LISTA E ARRUMA OS PONTEIROS
     pointer = pBuffer + ( REGISTER_SIZE * ( (*size) - 1 ) );
@@ -139,31 +153,81 @@ void PUSH( void * pBuffer, void ** pL, int * size, int * i ) {
 
 void* POP(void * pBuffer, void ** pL, int * size, int * i) {
     void * newBuffer = ( void * )realloc( pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
-    void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) );
-    void * p1;
+    void ** newPL = realloc( pL, sizeof( void * ) * 2 * (*size) ); // REALOCA ESPACO PRA 2 PONTEIROS A MENOS
+    void * p1 = pBuffer + START_SIZE;
     void * p2;
     char * name = ( char * )malloc( NAME_SIZE );
+
+    size = ( int * )newBuffer;
+    i = ( int * )( newBuffer + ( sizeof( int ) * 2  ) );
 
     getchar();
     printf("Informe o nome a ser encontrado: ");
     scanf("%9[^\n]s", name);
 
     *i = 0;
-    if ( !strcmp( (char *)pL[ 0 ], name  ) ) 
+    if ( !strcmp( (char *)pL[ 0 ], name ) ) 
         ;
-    else 
-        while ( strcmp((char *)pL[(*i) + 1], name) && ( *i < ( ( (* size) * 2 ) - 2 ) ) )
+    else {
+        *i += 1;
+        while ( strcmp((char *)pL[(*i)], name) && ( *i < (* size) * 2 ) )
             *i += 2;
-
+    }
+       
+            
     // CASO O ULTIMO SEJA O PRIMEIRO TB -- UM UNICO CONTATO NA AGENDA
     if ( (*i) == 0 && (*size) == 0 ) {
-        CLEAR( pBuffer, pL  );
+        CLEAR( pBuffer, pL );
         newBuffer = RESET();
+        pL = (void ** ) malloc( sizeof( void * ) * 2 );
+        pL[0] = NULL;
+        pL[1] = NULL;
+        return newBuffer;
+    }
+
+    *i /= 2;
+    p1 = pBuffer + START_SIZE + ( REGISTER_SIZE * ( (*i) + 1 ) );
+    p2 = pBuffer + START_SIZE + ( REGISTER_SIZE * (*i) );
+
+    while ( *i < *size ) {
+        p2 = (char *)p1;
+        p1 += NAME_SIZE;
+        p2 += NAME_SIZE;
+        *( int * )p2 = *( int * )p1;
+        p1 += sizeof( int );
+        p2 += sizeof( int );
+        *( int * )p2 = *( int * )1;
+        p1 += sizeof( int );
+        p2 += sizeof( int );
+    }
+
+    p1 = newBuffer + START_SIZE;
+    newPL[0] = p1;
+    // PRIMEIRO ORGANIZA OS "LAST"
+    for ( (*i) = 2 ; *i <= ((*size) - 1) * 2 ; (*i)+=2 ) {
+        newPL[*i] = p1;
+        p1 += REGISTER_SIZE;
+    }
+
+    p1 = newBuffer + START_SIZE + REGISTER_SIZE;
+    for ( (*i) = 1 ; *i <= (((*size) - 1) * 2) ; (*i)+=2 ) {
+        newPL[*i] = p1;
+        p1 += REGISTER_SIZE;
+    }
+
+    newPL[*i] = NULL;
+    pL = newPL;
+
+    // CASO RETIRE DO COMECO
+    if ( (*i) == 0 ) {
+        for ( (*i) = 0 ; *i <= ((*size) - 1) * 2 ; (*i)++ ) 
+            newPL[*i] = pL[(*i) + 2];
+        newPL[*i] = NULL;
+        pL = newPL;
         return newBuffer;
     }
     
     if ( *i < ( ( (* size) * 2 ) - 2 ) ) { 
-        
         // CASO SEJA O ULTIMO A SER REMOVIDO
         for ( (*i) = 0 ; *i < ((*size) - 1) * 2 ; (*i)++ ) 
             newPL[*i] = pL[*i];
@@ -251,3 +315,12 @@ void FIND(void ** pL, int * size, int * i ) {
 
     printf("Nome nao encontrado\n");
 }
+
+/*
+void **ORGANIZE(void *pBuffer, void **pL, int *size, int *i) {
+    void ** pointer = realloc( pL, sizeof( void * ) * 2 * (*size) );
+
+    pL
+
+}
+*/
