@@ -1,9 +1,3 @@
-/*
-pl[0] = head
-pl[1] = next node
-pl[2] = last node
-pl[3] = next node
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,9 +10,9 @@ pl[3] = next node
 #define FALSE 0
 typedef int BOOL;
 
-void* RESET();  // funcionando
+void * RESET();  // funcionando
 void PUSH( void * pBuffer, int * size, int * i ); // tem q implementar a ordem alfabetica
-void POP( void * pBuffer, int * size, int * i); // precisa retirar do meio e do começo não sendo contato unico -- arrumar a logica de passagem do pbuffer
+void * POP( void * pBuffer, int * size, int * i); // funcionando
 void PRINT( void * pBuffer, int * size, int * i ); // funcionando
 BOOL EMPTY( int * size ); // funcionando
 void MENU( int * option ); // funcionando
@@ -40,11 +34,10 @@ int main() {
         MENU( option );
         switch ( *option ) {
         case 1:
-            (*size)++;
             if ( EMPTY( size ) )
                 pBuffer = ( void * )realloc( pBuffer, START_SIZE + REGISTER_SIZE );
             else
-                pBuffer = ( void * )realloc( pBuffer, ( START_SIZE + REGISTER_SIZE ) * ( *size) );
+                pBuffer = ( void * )realloc( pBuffer, ( START_SIZE + REGISTER_SIZE ) * ( ( *size) + 1 ) );
             size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
             i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
@@ -55,15 +48,16 @@ int main() {
                 printf("Lista vazia\n");
                 break;
             }
-            (*size)--;
-            POP( pBuffer, size, i );
+            pBuffer = POP( pBuffer, size, i );
+            size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
+            i = ( int * )( pBuffer + ( sizeof( int ) * 2 ) );
             break;
         case 3:
             if ( (*size) == 0 )
                 printf("Lista vazia\n");
             else
-                PRINT( pBuffer + START_SIZE, size, i );  
+                PRINT( pBuffer + START_SIZE, size, i );
             break;
         case 4:
             if ( (*size) == 0 )
@@ -93,6 +87,8 @@ void *RESET() {
 
 void PUSH( void * pBuffer, int * size, int * i ) {
     void * pointer = pBuffer;
+    void * pointer2 = pBuffer + REGISTER_SIZE;
+    char * name = (char *)malloc( NAME_SIZE );
 
     getchar();
     if ( EMPTY( size ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
@@ -101,20 +97,51 @@ void PUSH( void * pBuffer, int * size, int * i ) {
         scanf("%d", ( int * )pointer );
         pointer = pointer + sizeof( int );
         scanf("%d", ( int * )pointer );
+        *size += 1;
         return;
     }
 
-    pointer = pBuffer + ( REGISTER_SIZE * ( (*size) - 1 ) ); 
-    scanf("%9[^\n]s", ( char * )pointer );
+    scanf("%9[^\n]s", name ); 
+    *i = 0;
+    while( ( strcmp( (char *)pointer, name ) < 1 ) && ( *i < (*size) ) ) {
+        *i += 1;
+        pointer += REGISTER_SIZE;
+    }
+
+    if ( *i == *size ) {
+        strcpy((char *)pointer, name);
+        pointer = pointer + NAME_SIZE;
+        scanf("%d", ( int * )pointer );
+        pointer = pointer + sizeof( int );
+        scanf("%d", ( int * )pointer );
+        *size += 1;
+        return ;
+    }
+
+    *size += 1;
+    if ( *i == 0 ) {
+        pointer2 = pointer + REGISTER_SIZE;
+        memmove(pointer2, pointer, REGISTER_SIZE * (*size) );
+        strcpy((char *)pointer, name);
+        pointer = pointer + NAME_SIZE;
+        scanf("%d", ( int * )pointer );
+        pointer = pointer + sizeof( int );
+        scanf("%d", ( int * )pointer );
+        return ;
+    }
+
+    pointer2 = pointer + REGISTER_SIZE;
+    memmove(pointer2, pointer, REGISTER_SIZE * ( (*size) - (*i) ) );
+    strcpy((char *)pointer, name);
     pointer = pointer + NAME_SIZE;
     scanf("%d", ( int * )pointer );
     pointer = pointer + sizeof( int );
     scanf("%d", ( int * )pointer );
+    free( name );
 
 }
 
-void POP(void * pBuffer, int * size, int * i) {
-    void * newBuffer;
+void * POP( void * pBuffer, int * size, int * i ) {
     char * name = ( char * )malloc( NAME_SIZE );
     void * p1 = pBuffer + START_SIZE;
     void * p2;
@@ -124,57 +151,41 @@ void POP(void * pBuffer, int * size, int * i) {
     scanf("%9[^\n]s", name);
 
     *i = 0;
-    while( ( strcmp( (char *)p1, name ) != 0 ) && ( *i <=(*size) + 1 ) ) {
+    while( ( strcmp( (char *)p1, name ) != 0 ) && ( *i <= (*size) ) ) {
         *i += 1;
         p1 += REGISTER_SIZE;
     }
 
+    free( name );
     // NAO ENCONTRA
-    if ( *i > (*size) + 1 ) {
+    if ( *i > (*size) ) {
         printf("Nome nao encontrado\n");
-        size = ( int * )pBuffer;
-        i = ( int * )( pBuffer + ( sizeof( int ) * 2 ) );
-        (*size)++;
-        return ;
+        return pBuffer;
     }
-
-    newBuffer = ( void * )realloc( pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
-    size = ( int * )newBuffer;
-    i = ( int * )( newBuffer + ( sizeof( int ) * 2 ) );
 
     // ELEMENTO UNICO
-    if ( (*i) == 0 && (*size) == 0 ) {
+    if ( (*i) == 0 && ((*size) - 1) == 0 ) {
         CLEAR( pBuffer );
-        newBuffer = RESET();
-        pBuffer = newBuffer;
+        return RESET();
     }
 
+    (*size)--;
     // ULTIMO ELEMENTO
-    if ( *i == (*size) + 1 ) 
-        pBuffer = newBuffer;
-
-    p1 = pBuffer + START_SIZE + ( REGISTER_SIZE * (*i) );
-    p2 = newBuffer + START_SIZE;
-    while ( *i < *size ) {
-        strcpy( (char *)p2, (char *)p1 );
-        p1 += NAME_SIZE;
-        p2 += NAME_SIZE;
-        *( int * )p2 = *( int * )p1;
-        p1 += sizeof( int );
-        p2 += sizeof( int );
-        *( int * )p2 = *( int * )p1;
-        p1 += sizeof( int );
-        p2 += sizeof( int );
-        *i += 1;
+    if ( *i == (*size)) {
+        return ( void * )realloc(pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
     }
-    
-    pBuffer = newBuffer;
+
+
+    // COPIA A PARTIR DO PROX CONTATO LOGO DPS DO ENCONTRADO E REALLOCA MEMORIA PRA SIZE - 1;
+    p2 = p1 + REGISTER_SIZE;
+    memmove( p1, p2, REGISTER_SIZE * ( (*size) - (*i) ) );
+    return ( void * )realloc(pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
 }
 
 void PRINT( void * pBuffer , int * size, int * i ) {
     void * pointer = pBuffer;
 
-    for ( (*i) = 0 ; (*i) < (*size) * 2 ; (*i) += 2 ) {
+    for ( (*i) = 0 ; (*i) < (*size) ; (*i)++ ) {
         printf(" %s\n", ( char * ) pointer );
         pointer += NAME_SIZE;
         printf(" %d\n", *( int * ) pointer );
@@ -185,7 +196,7 @@ void PRINT( void * pBuffer , int * size, int * i ) {
 }
 
 BOOL EMPTY( int * size ) {
-    if ( (*size) - 1 == 0 ) {
+    if ( (*size) == 0 ) {
         return TRUE;
     }
 
