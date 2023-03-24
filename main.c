@@ -10,14 +10,14 @@
 #define FALSE 0
 typedef int BOOL;
 
-void * RESET();  // funcionando
-void PUSH( void * pBuffer, int * size, int * i ); // tem q implementar a ordem alfabetica
-void * POP( void * pBuffer, int * size, int * i); // funcionando
-void PRINT( void * pBuffer, int * size, int * i ); // funcionando
-BOOL EMPTY( int * size ); // funcionando
-void MENU( int * option ); // funcionando
-void CLEAR( void * pBuffer ); // funcionando
-void FIND( void * pBuffer, int * size, int * i ); // funcionando
+void * RESET();
+void PUSH( void * pBuffer, int * size, int * i ); 
+void * POP( void * pBuffer, int * size, int * i); 
+void PRINT( void * pBuffer, int * size, int * i ); 
+BOOL EMPTY( int * size ); 
+void MENU( int * option ); 
+void CLEAR( void * pBuffer );
+void FIND( void * pBuffer, int * size, int * i );
 
 int main() {
     void * pBuffer = RESET();
@@ -91,7 +91,7 @@ void PUSH( void * pBuffer, int * size, int * i ) {
     char * name = (char *)malloc( NAME_SIZE );
 
     getchar();
-    if ( EMPTY( size ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
+    if ( EMPTY( size ) ) { // TESTA SE EH O PRIMEIRO A SER COLOCADO NA LISTA
         scanf("%9[^\n]s", ( char * )pointer );
         pointer = pointer + NAME_SIZE;
         scanf("%d", ( int * )pointer );
@@ -108,6 +108,7 @@ void PUSH( void * pBuffer, int * size, int * i ) {
         pointer += REGISTER_SIZE;
     }
 
+    // TESTA SE SERA COLOCADO NO FINAL
     if ( *i == *size ) {
         strcpy((char *)pointer, name);
         pointer = pointer + NAME_SIZE;
