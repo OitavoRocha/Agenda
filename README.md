@@ -15,4 +15,4 @@
   Discord: Lekaso#5775
 
 ## Vídeo
-###### Link para o Vídeo: 
+###### Link para o Vídeo: https://drive.google.com/file/d/1LOF-UjtzSnPpqOcND9SmJ4CkTo2XrA5c/view?usp=sharing
