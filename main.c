@@ -10,14 +10,14 @@
 #define FALSE 0
 typedef int BOOL;
 
-void * RESET();
-void PUSH( void * pBuffer, int * size, int * i ); 
-void * POP( void * pBuffer, int * size, int * i); 
-void PRINT( void * pBuffer, int * size, int * i ); 
-BOOL EMPTY( int * size ); 
-void MENU( int * option ); 
-void CLEAR( void * pBuffer );
-void FIND( void * pBuffer, int * size, int * i );
+void * RESET();  // funcionando
+void PUSH( void * pBuffer, int * size, int * i ); // funcionando
+void * POP( void * pBuffer, int * size, int * i); // funcionando
+void PRINT( void * pBuffer, int * size, int * i ); // funcionando
+BOOL EMPTY( int * size ); // funcionando
+void MENU( int * option ); // funcionando
+void CLEAR( void * pBuffer ); // funcionando
+void FIND( void * pBuffer, int * size, int * i ); // funcionando
 
 int main() {
     void * pBuffer = RESET();
@@ -41,7 +41,7 @@ int main() {
             size = ( int * )pBuffer;
             option = ( int * )( pBuffer + sizeof( int ) );
             i = ( int * )( pBuffer + ( sizeof( int ) * 2  ) );
-            PUSH( (pBuffer + START_SIZE ), size, i );
+            PUSH( ( pBuffer + START_SIZE ), size, i );
             break;
         case 2:
             if ( (*size) == 0 ) {
@@ -67,7 +67,7 @@ int main() {
             break;
         case 5:
             CLEAR( pBuffer );
-            exit(1);
+            return 0;
             break;
         }
     }
@@ -88,55 +88,55 @@ void *RESET() {
 void PUSH( void * pBuffer, int * size, int * i ) {
     void * pointer = pBuffer;
     void * pointer2 = pBuffer + REGISTER_SIZE;
-    char * name = (char *)malloc( NAME_SIZE );
+    char * name;
 
     getchar();
-    if ( EMPTY( size ) ) { // TESTA SE EH O PRIMEIRO A SER COLOCADO NA LISTA
+    if ( EMPTY( size ) ) { // TESTA SE EH O PRIMEIRO DA LISTA
+        printf(" -Nome: ");
         scanf("%9[^\n]s", ( char * )pointer );
         pointer = pointer + NAME_SIZE;
+        printf(" -Idade: ");
         scanf("%d", ( int * )pointer );
         pointer = pointer + sizeof( int );
+        printf(" -Telefone: ");
         scanf("%d", ( int * )pointer );
         *size += 1;
         return;
     }
 
+    name = (char *)malloc( NAME_SIZE );
+    printf(" -Nome: ");
     scanf("%9[^\n]s", name ); 
     *i = 0;
     while( ( strcmp( (char *)pointer, name ) < 1 ) && ( *i < (*size) ) ) {
         *i += 1;
-        pointer += REGISTER_SIZE;
+        if ( *i < *size )
+            pointer += REGISTER_SIZE;
     }
 
-    // TESTA SE SERA COLOCADO NO FINAL
     if ( *i == *size ) {
+        pointer += REGISTER_SIZE;
         strcpy((char *)pointer, name);
         pointer = pointer + NAME_SIZE;
+        printf(" -Idade: ");
         scanf("%d", ( int * )pointer );
         pointer = pointer + sizeof( int );
+        printf(" -Telefone: ");
         scanf("%d", ( int * )pointer );
         *size += 1;
+        free( name );
         return ;
     }
 
     *size += 1;
-    if ( *i == 0 ) {
-        pointer2 = pointer + REGISTER_SIZE;
-        memmove(pointer2, pointer, REGISTER_SIZE * (*size) );
-        strcpy((char *)pointer, name);
-        pointer = pointer + NAME_SIZE;
-        scanf("%d", ( int * )pointer );
-        pointer = pointer + sizeof( int );
-        scanf("%d", ( int * )pointer );
-        return ;
-    }
-
     pointer2 = pointer + REGISTER_SIZE;
     memmove(pointer2, pointer, REGISTER_SIZE * ( (*size) - (*i) ) );
     strcpy((char *)pointer, name);
     pointer = pointer + NAME_SIZE;
+    printf(" -Idade: ");
     scanf("%d", ( int * )pointer );
     pointer = pointer + sizeof( int );
+    printf(" -Telefone: ");
     scanf("%d", ( int * )pointer );
     free( name );
 
@@ -154,7 +154,8 @@ void * POP( void * pBuffer, int * size, int * i ) {
     *i = 0;
     while( ( strcmp( (char *)p1, name ) != 0 ) && ( *i <= (*size) ) ) {
         *i += 1;
-        p1 += REGISTER_SIZE;
+        if ( *i < *size )
+            p1 += REGISTER_SIZE;
     }
 
     free( name );
@@ -176,7 +177,6 @@ void * POP( void * pBuffer, int * size, int * i ) {
         return ( void * )realloc(pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
     }
 
-
     // COPIA A PARTIR DO PROX CONTATO LOGO DPS DO ENCONTRADO E REALLOCA MEMORIA PRA SIZE - 1;
     p2 = p1 + REGISTER_SIZE;
     memmove( p1, p2, REGISTER_SIZE * ( (*size) - (*i) ) );
@@ -185,14 +185,16 @@ void * POP( void * pBuffer, int * size, int * i ) {
 
 void PRINT( void * pBuffer , int * size, int * i ) {
     void * pointer = pBuffer;
-
+    
+    printf("+-------------------+\n");
     for ( (*i) = 0 ; (*i) < (*size) ; (*i)++ ) {
-        printf(" %s\n", ( char * ) pointer );
+        printf("Nome: %s\n", ( char * ) pointer );
         pointer += NAME_SIZE;
-        printf(" %d\n", *( int * ) pointer );
+        printf("Idade: %d\n", *( int * ) pointer );
         pointer += sizeof( int );
-        printf(" %d\n", *( int * ) pointer );
+        printf("Telefone: %d\n", *( int * ) pointer );
         pointer += sizeof( int );
+        printf("+-------------------+\n");
     }
 }
 
@@ -234,16 +236,20 @@ void FIND( void * pBuffer, int * size, int * i ) {
 
     for ( *i = 0 ; *i < *size ; *i += 1 ) {
         if ( !strcmp( (char *)pointer, name  ) ) {
-            printf(" %s\n", ( char * ) pointer );
+            printf("+-------------------+\n");
+            printf(" Nome: %s\n", ( char * ) pointer );
             pointer += NAME_SIZE;
-            printf(" %d\n", *( int * ) pointer );
+            printf(" Idade: %d\n", *( int * ) pointer );
             pointer += sizeof( int );
-            printf(" %d\n", *( int * ) pointer );
+            printf(" Telefone: %d\n", *( int * ) pointer );
             pointer += sizeof( int );
+            printf("+-------------------+\n");
+            free( name );
             return ;
         }
         pointer += REGISTER_SIZE;
     }
 
+    free( name );
     printf("Nome nao encontrado\n");
 }
