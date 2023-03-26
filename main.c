@@ -106,7 +106,9 @@ void PUSH( void * pBuffer, int * size, int * i ) {
 
     name = (char *)malloc( NAME_SIZE );
     printf(" -Nome: ");
-    scanf("%9[^\n]s", name ); 
+    scanf("%9[^\n]s", name );
+
+    // PROCURA O LOCAL A SER COLOCADO ALFABETICAMENTE
     *i = 0;
     while( ( strcmp( (char *)pointer, name ) < 1 ) && ( *i < (*size) ) ) {
         *i += 1;
@@ -114,6 +116,7 @@ void PUSH( void * pBuffer, int * size, int * i ) {
             pointer += REGISTER_SIZE;
     }
 
+    // TESTA SE EH O ULTIMO
     if ( *i == *size ) {
         pointer += REGISTER_SIZE;
         strcpy((char *)pointer, name);
@@ -130,8 +133,8 @@ void PUSH( void * pBuffer, int * size, int * i ) {
 
     *size += 1;
     pointer2 = pointer + REGISTER_SIZE;
-    memmove(pointer2, pointer, REGISTER_SIZE * ( (*size) - (*i) ) );
-    strcpy((char *)pointer, name);
+    memmove( pointer2, pointer, REGISTER_SIZE * ( (*size) - (*i) ) );
+    strcpy( (char *)pointer, name );
     pointer = pointer + NAME_SIZE;
     printf(" -Idade: ");
     scanf("%d", ( int * )pointer );
@@ -151,6 +154,7 @@ void * POP( void * pBuffer, int * size, int * i ) {
     printf("Informe o nome a ser encontrado: ");
     scanf("%9[^\n]s", name);
 
+    // PROCURA O CONTATO
     *i = 0;
     while( ( strcmp( (char *)p1, name ) != 0 ) && ( *i <= (*size) ) ) {
         *i += 1;
@@ -160,7 +164,7 @@ void * POP( void * pBuffer, int * size, int * i ) {
 
     free( name );
     // NAO ENCONTRA
-    if ( *i > (*size) ) {
+    if ( *i > *size ) {
         printf("Nome nao encontrado\n");
         return pBuffer;
     }
@@ -173,7 +177,7 @@ void * POP( void * pBuffer, int * size, int * i ) {
 
     (*size)--;
     // ULTIMO ELEMENTO
-    if ( *i == (*size)) {
+    if ( *i == *size ) {
         return ( void * )realloc(pBuffer, START_SIZE + ( REGISTER_SIZE * (*size) ) );
     }
 
@@ -206,8 +210,7 @@ BOOL EMPTY( int * size ) {
     return FALSE;
 }
 
-void MENU(int *option)
-{
+void MENU( int *option ) {
 
     printf("+----- MENU -----+\n");
     printf(" 1.Adicionar Nome\n");
